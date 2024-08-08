@@ -1,8 +1,13 @@
 from mountainlab_pytools import mdaio
 import numpy as np
 import multiprocessing
+import itertools
 import time
 import os
+
+def pool_init(shared_data):
+    global g_shared_data
+    g_shared_data = data
 
 class SharedChunkInfo():
     def __init__(self,num_chunks):
@@ -30,8 +35,7 @@ class SharedChunkInfo():
         with self.lock:
             print('Processed {} of {} chunks...'.format(self.num_completed_chunks.value,self.num_chunks))
 
-def compute_AAt_matrix_for_chunk(num):
-    opts=g_opts
+def compute_AAt_matrix_for_chunk(num,opts):
     in_fname=opts['timeseries'] # The entire (large) input file
     out_fname=opts['timeseries_out'] # The entire (large) output file
     chunk_size=opts['chunk_size']
@@ -48,7 +52,7 @@ def compute_AAt_matrix_for_chunk(num):
     
     return ret
 
-def whiten_chunk(num,W):
+def whiten_chunk(num,W,opts):
     #print('Whitening {}'.format(num))
     opts=g_opts
     #print('Whitening chunk {} of {}'.format(num,opts['num_chunks']))
@@ -123,7 +127,7 @@ def whiten(*,
     
     pool = multiprocessing.Pool(processes=num_processes)
     step=int(np.maximum(1,np.floor(num_chunks/num_chunks_for_computing_cov_matrix)))
-    AAt_matrices=pool.map(compute_AAt_matrix_for_chunk,range(0,num_chunks,step),chunksize=1)
+    AAt_matrices=pool.map(compute_AAt_matrix_for_chunk,zip(range(0,num_chunks,step),iterools.repeat(g_opts)),chunksize=1)
     
     AAt=np.zeros((M,M),dtype='float64')
     
@@ -136,12 +140,12 @@ def whiten(*,
     #print ('Whitening matrix:')
     #print (W)
     
-    global g_shared_data
+    #global g_shared_data
     g_shared_data=SharedChunkInfo(num_chunks)
     mdaio.writemda32(np.zeros([M,0]),timeseries_out)
     
-    pool = multiprocessing.Pool(processes=num_processes)
-    pool.starmap(whiten_chunk,[(num,W) for num in range(0,num_chunks)],chunksize=1)
+    pool = multiprocessing.Pool(processes=num_processes,initializer=pool_init, initargs=(g_shared_data,))
+    pool.starmap(whiten_chunk,[(num,W,g_opts) for num in range(0,num_chunks)],chunksize=1)
     
     return True
 whiten.name='ephys.whiten'
