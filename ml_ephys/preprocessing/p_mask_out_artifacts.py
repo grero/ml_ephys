@@ -1,5 +1,6 @@
 from mountainlab_pytools import mdaio
 import numpy as np
+import itertools
 import multiprocessing
 import time
 import os
@@ -7,6 +8,11 @@ import os
 processor_name = 'ephys.mask_out_artifacts'
 processor_version = '0.1.0'
 
+def pool_init(shared_data, opts):
+    global g_shared_data
+    g_shared_data = shared_data
+    global g_opts
+    g_opts = opts
 
 class SharedChunkInfo():
     def __init__(self, num_chunks):
@@ -124,12 +130,12 @@ def mask_out_artifacts(*, timeseries, timeseries_out, threshold=6, chunk_size=20
 
         print("For channel %d: mean=%.2f, stdev=%.2f, chunk size = %d\n" % (m, mean0, sigma0, chunk_size))
 
-    global g_shared_data
+    #global g_shared_data
     g_shared_data = SharedChunkInfo(num_write)
 
     mdaio.writemda32(np.zeros([M, 0]), timeseries_out)  # create initial file w/ empty array so we can append to it
 
-    pool = multiprocessing.Pool(processes=num_processes)
+    pool = multiprocessing.Pool(processes=num_processes, initializer=pool_init, initargs=(g_shared_data,g_opts))
     # pool.starmap(mask_chunk,[(num,use_it[num]) for num in range(0,num_chunks)],chunksize=1)
     pool.starmap(mask_chunk, [(num, use_it[num * num_write_chunks:(num + 1) * num_write_chunks]
                                ) for num in range(0, num_write)], chunksize=1)

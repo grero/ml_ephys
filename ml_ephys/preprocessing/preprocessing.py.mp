@@ -14,5 +14,6 @@ PM.registerProcessor(p_bandpass_filter.bandpass_filter)
 PM.registerProcessor(p_whiten.whiten)
 PM.registerProcessor(p_mask_out_artifacts.mask_out_artifacts)
 
-if not PM.run(sys.argv):
-    exit(-1)
+if __name__ == "__main__":
+	if not PM.run(sys.argv):
+		exit(-1)

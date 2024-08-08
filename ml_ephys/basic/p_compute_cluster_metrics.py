@@ -38,7 +38,7 @@ def compute_cluster_metrics(*,timeseries='',firings,metrics_out,clip_size=100,sa
     L=F.shape[1]
     assert(R>=3)
     times=F[1,:]
-    labels=F[2,:].astype(np.int)
+    labels=F[2,:].astype(np.int64)
     K=np.max(labels)
     N=0
     if timeseries:

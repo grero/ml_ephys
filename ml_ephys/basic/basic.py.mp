@@ -16,5 +16,6 @@ PM.registerProcessor(p_compute_cross_correlograms.compute_cross_correlograms)
 PM.registerProcessor(p_convert_array.convert_array)
 PM.registerProcessor(p_compute_cluster_metrics.compute_cluster_metrics)
 
-if not PM.run(sys.argv):
-    exit(-1)
+if __name__ == "__main__":
+	if not PM.run(sys.argv):
+		exit(-1)
